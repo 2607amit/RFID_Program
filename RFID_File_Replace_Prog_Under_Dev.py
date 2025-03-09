@@ -4,13 +4,17 @@ import shutil
 import tkinter as tk
 from tkinter import messagebox, ttk
 import subprocess
+import psutil  # To manage processes
 
 # File paths
-csv_file_path = "C:/Documents/amit/csvFile/test_cases.csv"
-rfid_in_use_path = "C:/Documents/amit/RFID_File_in_use/Configuration1.xml"
-monitor_script_path = "C:/Documents/amit/exe/DummyConfigFileReader.exe"  # Path to the monitoring executable
+csv_file_path = "C:/Users/Dell/Documents/amit/csvFile/test_cases.csv"
+rfid_in_use_path = "C:/Users/Dell/Documents/amit/RFID_File_in_use/Configuration1.xml"
+monitor_script_path = "C:/Users/Dell/Documents/amit/python_projects/dist/DummyConfigFileReader/DummyConfigFileReader.exe"  # Path to the monitoring executable
+# =============================================================================
+# C:\Users\Dell\Documents\amit\python_projects\dist\DummyConfigFileReader
+# =============================================================================
+monitor_process_name = "DummyConfigFileReader.exe"  # Process name to track
 
-# Load CSV file
 def load_csv():
     return pd.read_csv(csv_file_path)
 
@@ -27,9 +31,26 @@ def update_test_cases(event, series_var, test_case_dropdown, df):
     if test_cases:
         test_case_dropdown.current(0)
 
+def kill_monitoring_program():
+    """Kills the monitoring program if it is running."""
+    for process in psutil.process_iter(attrs=["pid", "name"]):
+        if process.info["name"] == monitor_process_name:
+            try:
+                process.kill()
+                print(f"Killed existing monitoring process: {monitor_process_name}")
+            except Exception as e:
+                print(f"Error terminating process: {e}")
+
 def restart_monitoring_program():
+    """Kills and then restarts the monitoring program."""
+    kill_monitoring_program()  # Kill existing process first
     try:
-        subprocess.run([monitor_script_path], check=True)
+# =============================================================================
+#         subprocess.Popen([monitor_script_path], creationflags=subprocess.CREATE_NEW_CONSOLE)
+# =============================================================================
+        subprocess.Popen(monitor_script_path, creationflags=subprocess.CREATE_NEW_CONSOLE, cwd=os.path.dirname(monitor_script_path))
+
+        print("Restarted monitoring program successfully.")
     except Exception as e:
         messagebox.showerror("Error", f"Failed to restart monitoring program: {e}")
 
